@@ -1,0 +1,23 @@
+import { DataSource } from 'typeorm';
+
+export const databaseProviders = [
+  {
+    provide: 'DATA_SOURCE',
+    useFactory: async () => {
+      const dataSource = new DataSource({
+        type: 'postgres',
+        host: 'localhost',
+        port: 5432,
+        username: 'postgres',
+        password: 'iago007',
+        database: 'recados_db',
+        entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+        synchronize: true,
+      });
+
+      return dataSource.initialize();
+    },
+  },
+];
+
+Outa forma de fazer, olhar na doc -> https://docs.nestjs.com/recipes/sql-typeorm

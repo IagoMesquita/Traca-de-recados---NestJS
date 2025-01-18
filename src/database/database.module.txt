@@ -1,0 +1,10 @@
+import { Module } from "@nestjs/common";
+import { databaseProviders } from "./database.providers";
+
+@Module({
+  providers: [...databaseProviders],
+  exports: [...databaseProviders],
+})
+export class DatabaseModule {}
+
+Outa forma de fazer, olhar na doc -> https://docs.nestjs.com/recipes/sql-typeorm
