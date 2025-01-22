@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { RecadosModule } from 'src/recados/recados.module';
+import { MessageModule } from 'src/messages/message.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { PersonModule } from 'src/person/person.module';
 
 @Module({
   imports: [
@@ -15,14 +16,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       database: 'recados_db',
       autoLoadEntities: true, // Carrega entidades sem precisar especifica-las.
       synchronize: true, // No usar em producao
-
     }),
-    RecadosModule,
+    MessageModule,
+    PersonModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
 
-
-// npm i --save @nestjs/typeorm typeorm pg 
+// npm i --save @nestjs/typeorm typeorm pg
