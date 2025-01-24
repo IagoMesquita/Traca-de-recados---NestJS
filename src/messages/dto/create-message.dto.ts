@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsString } from "@nestjs/class-validator";
-import { MaxLength, MinLength } from "class-validator";
+import { IsPositive, MaxLength, MinLength } from "class-validator";
 
 export class CreateMessageDto {
   
@@ -9,13 +9,11 @@ export class CreateMessageDto {
   @MaxLength(100, {message: "Texto deve ter no maximo 100 caracteres"})
   readonly text: string;
 
-  @IsString()
-  @IsNotEmpty()
-  readonly from: string;
+  @IsPositive()
+  readonly fromId: number;
 
-  @IsString()
-  @IsNotEmpty()
-  readonly to: string;
+  @IsPositive()
+  readonly toId: number;
 }
 
 
