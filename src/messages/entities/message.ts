@@ -22,14 +22,14 @@ export class Message {
   isRead: boolean;
 
   // Muitas recados podem ser enviados por usa unica pessoa (emissor)
-  @ManyToOne(() => Person)
+  @ManyToOne(() => Person, { onDelete: 'CASCADE', onUpdate: 'CASCADE'}) // -> Se deleto ou atualizo Person, cascade cascateia para Message
   @JoinColumn({ name: 'from' }) // -> Especifica a coluna "de" que armazena o ID da pessoa que enviou o recado
   from: Person;
 
   // Muitas recados podem ser recebidos por usa unica pessoa (destinatario)
-  @ManyToOne(() => Person)
+  @ManyToOne(() => Person, { onDelete: 'CASCADE', onUpdate: 'CASCADE'}) 
   @JoinColumn({ name: 'to' })
-  to: string;
+  to: Person;
 
   @CreateDateColumn()
   createDate?: Date;
