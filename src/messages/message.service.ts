@@ -1,11 +1,10 @@
-import { ConsoleLogger, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Message } from './entities/message';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { PersonService } from 'src/person/person.service';
-import { Person } from '../person/entities/person.entity';
 import { PaginationDTO } from 'src/common/dto/pagination.dto';
 
 @Injectable()
@@ -145,3 +144,5 @@ export class MessageService {
     return { message: `Recado de ID ${id}, Deletado` };
   }
 }
+
+
