@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { PersonService } from 'src/person/person.service';
 import { Person } from '../person/entities/person.entity';
+import { PaginationDTO } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class MessageService {
@@ -47,8 +48,14 @@ export class MessageService {
   }
 
   //Nos metodos do repositiry da para configurar relacoes e response
-  async findAll(): Promise<Message[]> {
+  async findAll(
+    paginationDTO?: PaginationDTO,
+  ): Promise<{ totalMessages: number; data: Message[] }> {
+    const { limite = 10, offset = 0 } = paginationDTO;
+
     const messagesDB = await this.messageRepository.find({
+      take: limite, // Quantos registros serao exibidos (por pagina)
+      skip: offset, // Quantos registros devem ser pulados,
       relations: ['from', 'to'],
       select: {
         from: {
@@ -62,7 +69,9 @@ export class MessageService {
       },
     });
 
-    return messagesDB;
+    const totalMessages = await this.messageRepository.count();
+
+    return { totalMessages, data: messagesDB };
   }
 
   async findOne(id: number): Promise<Message> {
@@ -101,14 +110,12 @@ export class MessageService {
     const isRead = updateMessage.isRead
       ? updateMessage.isRead
       : messageDb.isRead;
-    const text = updateMessage.text 
-      ? updateMessage.text 
-      : messageDb.text;
+    const text = updateMessage.text ? updateMessage.text : messageDb.text;
 
     const updatedMessage = {
       ...messageDb,
       isRead,
-      text
+      text,
     };
 
     // const updated = this.recadoRepository.update(id, updateRecado); Apenas atualiza
