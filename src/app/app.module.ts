@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PersonModule } from 'src/person/person.module';
 import { MessageModule } from 'src/messages/message.module';
 import { SimpleMiddleware } from 'src/common/middlewares/simple.middleware';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { GlobalExceptionsFilter } from 'src/common/ExceptionsFilter/global-exceptions.filter';
 
 @Module({
@@ -29,7 +29,11 @@ import { GlobalExceptionsFilter } from 'src/common/ExceptionsFilter/global-excep
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionsFilter
-    }
+    }, 
+    // {
+    //   provide: APP_GUARD,
+      // useClass: AuthGuard
+    // }
   ],
 })
 export class AppModule implements NestModule {
@@ -38,6 +42,10 @@ export class AppModule implements NestModule {
       path: '/persons/*', // -> soemente para a persons e qualquer caminho depois
       // path: '*', -> Pata todas as rotas
       method: RequestMethod.ALL
+    }),
+    consumer.apply(SimpleMiddleware).forRoutes({
+      path: '/recados/*',
+      method: RequestMethod.GET
     })
   }
 }
