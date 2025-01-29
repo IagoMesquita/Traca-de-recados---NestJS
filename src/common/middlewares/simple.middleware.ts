@@ -12,19 +12,26 @@ export class SimpleMiddleware implements NestMiddleware {
       req['user'] = {
         nome: 'Iago',
         sobrenome: 'Middleware',
+        role: 'admin'
       };
-    }
+    } else {
+      req['user'] = {
+        nome: 'Iago',
+        sobrenome: 'Middleware',
+        role: 'user'
+      };
+    } 
 
     res.setHeader('CABECALHO', 'Do Middleware');
 
     next();
 
-    console.log('SimpleMiddleware: Depois do Next');
+    console.log('SimpleMiddleware: Depois do Next', req['user']);
 
-    res.on('finish', () => {
+    res.on('finish', () => { // Nao e obrigatorio. Executa ao final de tudo, depois que a middle e executada
       console.log('SimpleMiddleware: Terminou');
     });
   }
 }
 
-// O exemplo nao faz muito sentido, e mais para entender como e o que pode ser feito com as Middleware
+// Apos authenticar cria um usuario Admin, que pode ser validado pelo Gaurd
