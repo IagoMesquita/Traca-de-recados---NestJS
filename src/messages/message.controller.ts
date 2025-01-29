@@ -3,35 +3,35 @@ import {
   Controller,
   Delete,
   Get,
-  HttpCode,
-  HttpStatus,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
-  UsePipes,
+  UseGuards,
 } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { Message } from './entities/message';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { PaginationDTO } from 'src/common/dto/pagination.dto';
-import { ParseIntIdPipe } from 'src/common/pipes/parse-int-id.pipes';
+import { AuthGuard } from 'src/common/guards/auth.guard';
 
-@UsePipes(ParseIntIdPipe)
+// @UsePipes(ParseIntIdPipe)
+// @UseInterceptors(AuthTokenInterceptor)
 @Controller('recados')
 export class MessageController {
   constructor(private readonly messageService: MessageService) {}
 
   @Get()
+  @UseGuards(AuthGuard)
   findAll(
     @Query() pagination?: PaginationDTO,
-  ): Promise<{ totalMessages: number, data: Message[] }> {
+  ): Promise<{ totalMessages: number; data: Message[] }> {
     return this.messageService.findAll(pagination);
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard)
   findOne(@Param('id') id: number): Promise<Message> {
     return this.messageService.findOne(id);
   }
@@ -42,10 +42,7 @@ export class MessageController {
   }
 
   @Patch(':id')
-  update(
-    @Param('id') id: number,
-    @Body() recado: UpdateMessageDto,
-  ) {
+  update(@Param('id') id: number, @Body() recado: UpdateMessageDto) {
     return this.messageService.update(+id, recado);
   }
 
@@ -61,7 +58,6 @@ export class MessageController {
 
 // Enum de status
 // @HttpCode(HttpStatus.CREATED)
-
 
 // Pipes: de validacao, transformacao e valiacao/transformacao
 //    Global com app.useGlobalPipes(new ValidationPipe({}))
