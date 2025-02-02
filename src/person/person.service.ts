@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,19 +9,24 @@ import { UpdatePersonDto } from './dto/update-person.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Person } from './entities/person.entity';
 import { Repository } from 'typeorm';
+import { HasingServiceProtocol } from 'src/auth/hasing/hashing.protocol.service';
 
 @Injectable()
 export class PersonService {
   constructor(
     @InjectRepository(Person)
     private readonly personRepository: Repository<Person>,
+    private readonly hashingService: HasingServiceProtocol,
   ) {}
 
   async create(createPersonDto: CreatePersonDto) {
     try {
+      const { password } = createPersonDto;
+      const passwordHash = await this.hashingService.toHash(password);
+
       const personToEntity = {
         name: createPersonDto.name,
-        passwordHash: createPersonDto.password,
+        passwordHash,
         email: createPersonDto.email,
       };
 
@@ -59,9 +65,12 @@ export class PersonService {
   }
 
   async update(id: number, updatePersonDto: UpdatePersonDto) {
+
+    const passwordHash = await this.hashingService.toHash(updatePersonDto?.password);
+
     const partialUpdatePerson = {
       name: updatePersonDto?.name,
-      passwordHash: updatePersonDto?.password,
+      passwordHash
     };
 
     const updatedPersonInstance = this.personRepository.create({
@@ -76,14 +85,13 @@ export class PersonService {
     return this.personRepository.save(updatedPersonInstance);
   }
 
-  async remove(id: number): Promise<{menssage: string}> {
+  async remove(id: number): Promise<{ menssage: string }> {
     const personDB = await this.findOne(id);
-    
+
     await this.personRepository.remove(personDB);
 
     return {
       menssage: `Usuario deletado Id: ${id}`,
-  
-    }
+    };
   }
 }
