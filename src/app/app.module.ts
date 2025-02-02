@@ -8,6 +8,7 @@ import { SimpleMiddleware } from 'src/common/middlewares/simple.middleware';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { GlobalExceptionsFilter } from 'src/common/ExceptionsFilter/global-exceptions.filter';
 import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ConfigModule } from '@nestjs/config';
     }),
     MessageModule,
     PersonModule,
+    AuthModule
   ],
   controllers: [AppController],
   providers: [
