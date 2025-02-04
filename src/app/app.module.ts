@@ -33,10 +33,10 @@ import { AuthModule } from 'src/auth/auth.module';
   controllers: [AppController],
   providers: [
     AppService,
-    {
-      provide: APP_FILTER,
-      useClass: GlobalExceptionsFilter
-    }, 
+    // {
+    //   provide: APP_FILTER,
+    //   useClass: GlobalExceptionsFilter
+    // }, 
     // {
     //   provide: APP_GUARD,
       // useClass: AuthGuard
