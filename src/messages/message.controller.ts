@@ -23,7 +23,7 @@ export class MessageController {
   constructor(private readonly messageService: MessageService) {}
 
   @Get()
-  @UseGuards(AuthGuard)
+  // @UseGuards(AuthGuard)
   findAll(
     @Query() pagination?: PaginationDTO,
   ): Promise<{ totalMessages: number; data: Message[] }> {
