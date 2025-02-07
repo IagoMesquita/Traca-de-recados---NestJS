@@ -22,11 +22,11 @@ export class AuthService {
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
     private readonly jwtService: JwtService,
-  ) {
-    console.log(jwtConfiguration);
-  }
+  ) {}
 
-  async signIn(loginDto: LoginDto): Promise<{message: string, access_token: string }> {
+  async signIn(
+    loginDto: LoginDto,
+  ): Promise<{ message: string; access_token: string }> {
     const { email, password } = loginDto;
 
     const personDB = await this.personRepository.findOne({ where: { email } });
@@ -57,7 +57,7 @@ export class AuthService {
       issuer: this.jwtConfiguration.issuer,
       secret: this.jwtConfiguration.secret,
       expiresIn: this.jwtConfiguration.jwtTtl,
-    }; 
+    };
 
     return {
       message: 'Login Success!',

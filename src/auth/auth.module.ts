@@ -14,9 +14,13 @@ import { JwtModule } from '@nestjs/jwt';
   imports: [
     TypeOrmModule.forFeature([Person]),
     ConfigModule.forFeature(jwtConfig),
-    JwtModule.registerAsync(jwtConfig.asProvider())
+    JwtModule.registerAsync(jwtConfig.asProvider()),
   ],
-  exports: [HasingServiceProtocol],
+  exports: [
+    HasingServiceProtocol,
+    ConfigModule,
+    JwtModule,
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,
