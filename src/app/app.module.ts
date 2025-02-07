@@ -58,11 +58,11 @@ export class AppModule implements NestModule {
       path: '/persons/*', // -> soemente para a persons e qualquer caminho depois
       // path: '*', -> Pata todas as rotas
       method: RequestMethod.ALL
-    }),
-    consumer.apply(SimpleMiddleware).forRoutes({
-      path: '/recados/*',
-      method: RequestMethod.GET
     })
+    // consumer.apply(SimpleMiddleware).forRoutes({
+    //   path: '/recados/*',
+    //   method: RequestMethod.GET
+    // })
   }
 }
 
