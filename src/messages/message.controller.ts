@@ -14,7 +14,7 @@ import { Message } from './entities/message';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { PaginationDTO } from 'src/common/dto/pagination.dto';
-import { AuthGuard } from 'src/common/guards/auth.guard';
+import { AuthTokenGuard } from 'src/auth/guards/auth-token.guard';
 
 // @UsePipes(ParseIntIdPipe)
 // @UseInterceptors(AuthTokenInterceptor)
@@ -23,7 +23,8 @@ export class MessageController {
   constructor(private readonly messageService: MessageService) {}
 
   @Get()
-  // @UseGuards(AuthGuard)
+  // @UseGuards(RoleGuard)
+  @UseGuards(AuthTokenGuard)
   findAll(
     @Query() pagination?: PaginationDTO,
   ): Promise<{ totalMessages: number; data: Message[] }> {
@@ -31,7 +32,8 @@ export class MessageController {
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard)
+  // @UseGuards(RoleGuard)
+  @UseGuards(AuthTokenGuard)
   findOne(@Param('id') id: number): Promise<Message> {
     return this.messageService.findOne(id);
   }
