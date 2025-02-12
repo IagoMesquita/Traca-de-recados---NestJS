@@ -1,8 +1,10 @@
 import {
   ConflictException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
@@ -10,6 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Person } from './entities/person.entity';
 import { Repository } from 'typeorm';
 import { HasingServiceProtocol } from 'src/auth/hasing/hashing.protocol.service';
+import { TokenPayloadDto } from 'src/auth/dto/token-payload.dto';
 
 @Injectable()
 export class PersonService {
@@ -64,7 +67,7 @@ export class PersonService {
     return personDB;
   }
 
-  async update(id: number, updatePersonDto: UpdatePersonDto) {
+  async update(id: number, updatePersonDto: UpdatePersonDto, tokenPayload: TokenPayloadDto) {
 
     const passwordHash = await this.hashingService.toHash(updatePersonDto?.password);
 
@@ -79,14 +82,23 @@ export class PersonService {
     });
 
     if (!updatedPersonInstance) {
-      throw new NotFoundException(`Recado para ID ${id} nao encontrado`);
+      throw new NotFoundException(`Usuario para ID ${id} nao encontrado`);
+    }
+
+    if(tokenPayload.sub !== id) {
+      throw new ForbiddenException("Esse nao e seu usuario.")
     }
 
     return this.personRepository.save(updatedPersonInstance);
   }
 
-  async remove(id: number): Promise<{ menssage: string }> {
+  async remove(id: number,  tokenPayload: TokenPayloadDto): Promise<{ menssage: string }> {
     const personDB = await this.findOne(id);
+
+    if(tokenPayload.sub !== id) {
+      throw new ForbiddenException("Esse nao e seu usuario.")
+    }
+
 
     await this.personRepository.remove(personDB);
 
