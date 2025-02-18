@@ -27,7 +27,7 @@ export class AuthService {
 
   async signIn(
     loginDto: LoginDto,
-  ): Promise<{ message: string; accessToken: string, refreshToken: string }> {
+  ): Promise<{ message: string; accessToken: string; refreshToken: string }> {
     const { email, password } = loginDto;
 
     const personDB = await this.personRepository.findOne({ where: { email } });
@@ -47,6 +47,16 @@ export class AuthService {
       throw new UnauthorizedException('Usuario nao autorizado');
     }
 
+    return this.createTokens(personDB);
+  }
+
+  refreshTokens(refreshTokenDto: RefreshTokenDto) {
+    return true;
+  }
+
+  private async createTokens(
+    personDB: Person,
+  ): Promise<{ message: string; accessToken: string; refreshToken: string }> {
     const accessToken = await this.singJwtAsync<Partial<Person>>(
       personDB.id,
       this.jwtConfiguration.jwtTtl,
@@ -61,10 +71,9 @@ export class AuthService {
     return {
       message: 'Login Success!',
       accessToken,
-      refreshToken
+      refreshToken,
     };
   }
-
   private async singJwtAsync<T>(sub: number, expiresIn: number, payload?: T) {
     const payloadJwt = {
       sub,
@@ -83,9 +92,5 @@ export class AuthService {
 
     const accessToken = await this.jwtService.signAsync(payloadJwt, config);
     return accessToken;
-  }
-
-  refreshTokens(refreshTokenDto: RefreshTokenDto) {
-    return true;
   }
 }
