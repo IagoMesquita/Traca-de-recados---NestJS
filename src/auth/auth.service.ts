@@ -12,6 +12,7 @@ import { Repository } from 'typeorm';
 import jwtConfig from './config/jwt.config';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 @Injectable()
 export class AuthService {
@@ -26,7 +27,7 @@ export class AuthService {
 
   async signIn(
     loginDto: LoginDto,
-  ): Promise<{ message: string; access_token: string }> {
+  ): Promise<{ message: string; accessToken: string, refreshToken: string }> {
     const { email, password } = loginDto;
 
     const personDB = await this.personRepository.findOne({ where: { email } });
@@ -46,22 +47,45 @@ export class AuthService {
       throw new UnauthorizedException('Usuario nao autorizado');
     }
 
-    const payload = {
-      sub: personDB.id,
-      username: personDB.name,
-      email: personDB.email,
+    const accessToken = await this.singJwtAsync<Partial<Person>>(
+      personDB.id,
+      this.jwtConfiguration.jwtTtl,
+      { email: personDB.email },
+    );
+
+    const refreshToken = await this.singJwtAsync(
+      personDB.id,
+      this.jwtConfiguration.jwtRefreshTtl,
+    );
+
+    return {
+      message: 'Login Success!',
+      accessToken,
+      refreshToken
+    };
+  }
+
+  private async singJwtAsync<T>(sub: number, expiresIn: number, payload?: T) {
+    const payloadJwt = {
+      sub,
+      ...payload,
+      // sub: personDB.id,
+      // username: personDB.name,
+      // email: personDB.email,
     };
 
     const config = {
       audience: this.jwtConfiguration.audience,
       issuer: this.jwtConfiguration.issuer,
       secret: this.jwtConfiguration.secret,
-      expiresIn: this.jwtConfiguration.jwtTtl,
+      expiresIn,
     };
 
-    return {
-      message: 'Login Success!',
-      access_token: await this.jwtService.signAsync(payload, config),
-    };
+    const accessToken = await this.jwtService.signAsync(payloadJwt, config);
+    return accessToken;
+  }
+
+  refreshTokens(refreshTokenDto: RefreshTokenDto) {
+    return true;
   }
 }
