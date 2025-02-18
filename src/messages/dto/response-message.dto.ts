@@ -9,7 +9,7 @@ class ResponseMessageDTO {
 
   updadeDare?: Date;
 
-  from: { id: number };
+  from: { id: number, name: string };
 
-  to: { id: number };
+  to: { id: number, name: string };
 }
