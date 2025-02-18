@@ -15,6 +15,8 @@ import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { PaginationDTO } from 'src/common/dto/pagination.dto';
 import { AuthTokenGuard } from 'src/auth/guards/auth-token.guard';
+import { TokenPayloadParam } from 'src/auth/params/token-payload.param';
+import { TokenPayloadDto } from 'src/auth/dto/token-payload.dto';
 
 // @UsePipes(ParseIntIdPipe)
 // @UseInterceptors(AuthTokenInterceptor)
@@ -23,8 +25,6 @@ export class MessageController {
   constructor(private readonly messageService: MessageService) {}
 
   @Get()
-  // @UseGuards(RoleGuard)
-  @UseGuards(AuthTokenGuard)
   findAll(
     @Query() pagination?: PaginationDTO,
   ): Promise<{ totalMessages: number; data: Message[] }> {
@@ -32,26 +32,37 @@ export class MessageController {
   }
 
   @Get(':id')
-  // @UseGuards(RoleGuard)
-  @UseGuards(AuthTokenGuard)
   findOne(@Param('id') id: number): Promise<Message> {
     return this.messageService.findOne(id);
   }
 
+  @UseGuards(AuthTokenGuard)
   @Post()
-  create(@Body() novoMessage: CreateMessageDto) {
-    return this.messageService.addMessage(novoMessage);
+  create(
+    @Body() novoMessage: CreateMessageDto,
+    @TokenPayloadParam() tokenPayload: TokenPayloadDto,
+  ) {
+    return this.messageService.addMessage(novoMessage, tokenPayload);
   }
 
+  @UseGuards(AuthTokenGuard)
   @Patch(':id')
-  update(@Param('id') id: number, @Body() recado: UpdateMessageDto) {
-    return this.messageService.update(+id, recado);
+  update(
+    @Param('id') id: number,
+    @Body() recado: UpdateMessageDto,
+    @TokenPayloadParam() tokenPayload: TokenPayloadDto,
+  ) {
+    return this.messageService.update(+id, recado, tokenPayload);
   }
 
   // @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(AuthTokenGuard)
   @Delete(':id')
-  remove(@Param('id') id: string): Promise<{ message: string }> {
-    return this.messageService.remove(+id);
+  remove(
+    @Param('id') id: string,
+    @TokenPayloadParam() tokenPayload: TokenPayloadDto,
+  ): Promise<{ message: string }> {
+    return this.messageService.remove(+id, tokenPayload);
   }
 }
 
