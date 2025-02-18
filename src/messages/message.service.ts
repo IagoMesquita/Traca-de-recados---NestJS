@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Message } from './entities/message';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { PersonService } from 'src/person/person.service';
 import { PaginationDTO } from 'src/common/dto/pagination.dto';
+import { TokenPayloadDto } from 'src/auth/dto/token-payload.dto';
 
 @Injectable()
 export class MessageService {
@@ -17,10 +18,12 @@ export class MessageService {
 
   async addMessage(
     createMessageDto: CreateMessageDto,
+    tokenPayload: TokenPayloadDto,
   ): Promise<ResponseMessageDTO> {
-    const { fromId, toId, text } = createMessageDto;
+    const { toId, text } = createMessageDto;
+    const { sub } = tokenPayload;
 
-    const userFromDb = await this.personService.findOne(fromId);
+    const userFromDb = await this.personService.findOne(sub);
     const userToDb = await this.personService.findOne(toId);
 
     const newMessage = {
@@ -39,9 +42,11 @@ export class MessageService {
       ...message,
       from: {
         id: userFromDb.id,
+        name: message.from.name,
       },
       to: {
         id: userToDb.id,
+        name: message.to.name,
       },
     };
   }
@@ -98,7 +103,11 @@ export class MessageService {
     return messageDB;
   }
 
-  async update(id: number, updateMessage: UpdateMessageDto): Promise<Message> {
+  async update(
+    id: number,
+    updateMessage: UpdateMessageDto,
+    tokenPayload: TokenPayloadDto,
+  ): Promise<Message> {
     const messageDb = await this.findOne(id);
 
     // const partialUpdateMessage = {
@@ -106,6 +115,10 @@ export class MessageService {
     //   text: updateMessage?.text,
     // }
 
+    if(messageDb.from.id !== tokenPayload.sub ) {
+      throw new ForbiddenException("Nao pode alterar uma messagem que nao e");
+    }
+    
     const isRead = updateMessage.isRead
       ? updateMessage.isRead
       : messageDb.isRead;
@@ -137,12 +150,18 @@ export class MessageService {
     return this.messageRepository.save(updatedMessage);
   }
 
-  async remove(id: number): Promise<{ message: string }> {
-    await this.findOne(id);
+  async remove(
+    id: number,
+    tokenPayload: TokenPayloadDto,
+  ): Promise<{ message: string }> {
+    const messageDB = await this.findOne(id);
+
+    if(messageDB.from.id !== tokenPayload.sub) {
+      throw new ForbiddenException("Esse recado nao e seu para exclui-lo");
+    }
 
     await this.messageRepository.delete(id);
+    
     return { message: `Recado de ID ${id}, Deletado` };
   }
 }
-
-
