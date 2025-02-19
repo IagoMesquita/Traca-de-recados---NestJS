@@ -27,7 +27,7 @@ export class AuthService {
 
   async signIn(
     loginDto: LoginDto,
-  ): Promise<{ message: string; accessToken: string; refreshToken: string }> {
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const { email, password } = loginDto;
 
     const personDB = await this.personRepository.findOne({ where: { email } });
@@ -59,12 +59,11 @@ export class AuthService {
 
       const personDB = await this.personRepository.findOneBy({ id: sub });
 
-      if(!personDB) {
-        throw new Error('Pessoa nao encontrada')
+      if (!personDB) {
+        throw new Error('Pessoa nao encontrada');
       }
 
-      return this.createTokens(personDB)
-
+      return this.createTokens(personDB);
     } catch (e) {
       throw new UnauthorizedException(e.message);
     }
@@ -72,20 +71,24 @@ export class AuthService {
 
   private async createTokens(
     personDB: Person,
-  ): Promise<{ message: string; accessToken: string; refreshToken: string }> {
-    const accessToken = await this.singJwtAsync<Partial<Person>>(
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const accessTokenPromise = this.singJwtAsync<Partial<Person>>(
       personDB.id,
       this.jwtConfiguration.jwtTtl,
       { email: personDB.email },
     );
 
-    const refreshToken = await this.singJwtAsync(
+    const refreshTokenPromise = this.singJwtAsync(
       personDB.id,
       this.jwtConfiguration.jwtRefreshTtl,
     );
 
+    const [accessToken, refreshToken] = await Promise.all([
+      accessTokenPromise,
+      refreshTokenPromise,
+    ]);
+
     return {
-      message: 'Login Success!',
       accessToken,
       refreshToken,
     };
