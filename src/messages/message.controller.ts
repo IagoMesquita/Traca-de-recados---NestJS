@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  SetMetadata,
   UseGuards,
 } from '@nestjs/common';
 import { MessageService } from './message.service';
@@ -17,14 +18,19 @@ import { PaginationDTO } from 'src/common/dto/pagination.dto';
 import { AuthTokenGuard } from 'src/auth/guards/auth-token.guard';
 import { TokenPayloadParam } from 'src/auth/params/token-payload.param';
 import { TokenPayloadDto } from 'src/auth/dto/token-payload.dto';
+import { RoutePolicyGuard } from 'src/auth/guards/route-policy.guard';
+import { SetRoutePolicy } from 'src/auth/decorators/set-route-policy.decorator';
+import { RoutePolicies } from 'src/auth/enums/route-policies.enum';
 
 // @UsePipes(ParseIntIdPipe)
 // @UseInterceptors(AuthTokenInterceptor)
+@UseGuards(RoutePolicyGuard)
 @Controller('recados')
 export class MessageController {
   constructor(private readonly messageService: MessageService) {}
 
   @Get()
+  @SetRoutePolicy(RoutePolicies.findAllMessages)
   findAll(
     @Query() pagination?: PaginationDTO,
   ): Promise<{ totalMessages: number; data: Message[] }> {
@@ -78,3 +84,7 @@ export class MessageController {
 //    Como parametro findOne(@Param('id', ParseIntPipe) id: number)
 //    Como objeto parametro, para usar mais propriendafe
 //        findOne(@Param('id', new ParseIntPipe({})) id: number)
+
+
+// Metadados: Descricoes dos dados que sao trafegados no sistema
+  // @SetMetadado(key: string, value: string) -> Adiciona metadados
