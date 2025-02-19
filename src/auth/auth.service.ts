@@ -50,8 +50,24 @@ export class AuthService {
     return this.createTokens(personDB);
   }
 
-  refreshTokens(refreshTokenDto: RefreshTokenDto) {
-    return true;
+  async refreshTokens(refreshTokenDto: RefreshTokenDto) {
+    try {
+      const { sub } = await this.jwtService.verifyAsync(
+        refreshTokenDto.refreshToken,
+        this.jwtConfiguration,
+      );
+
+      const personDB = await this.personRepository.findOneBy({ id: sub });
+
+      if(!personDB) {
+        throw new Error('Pessoa nao encontrada')
+      }
+
+      return this.createTokens(personDB)
+
+    } catch (e) {
+      throw new UnauthorizedException(e.message);
+    }
   }
 
   private async createTokens(
