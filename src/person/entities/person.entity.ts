@@ -17,6 +17,9 @@ export class Person {
   @Column({ length: 100 })
   name: string;
 
+  @Column({ default: ''})
+  picture: string;
+
   // Uma pessoa pode ter enviado muitos recados como from
   // Esses recados sao realacionados ao compo from na entidade message 
   @OneToMany(() => Message, (message: Message) => message.from)
