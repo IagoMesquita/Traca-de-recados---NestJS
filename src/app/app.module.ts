@@ -8,6 +8,8 @@ import { SimpleMiddleware } from 'src/common/middlewares/simple.middleware';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from 'src/auth/auth.module';
 import * as Joi from '@hapi/joi';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import * as path from 'path';
 
 @Module({
   imports: [
@@ -37,7 +39,11 @@ import * as Joi from '@hapi/joi';
     }),
     MessageModule,
     PersonModule,
-    AuthModule
+    AuthModule,
+
+    ServeStaticModule.forRoot({
+      rootPath: path.resolve(__dirname, '..', '..', 'pictures'),
+    })
   ],
   controllers: [AppController],
   providers: [
@@ -69,3 +75,6 @@ export class AppModule implements NestModule {
 // npm i --save @nestjs/typeorm typeorm pg
 // npm i joi
 // npm i -D @types/hapi__join 
+
+// server Static
+// https://docs.nestjs.com/recipes/serve-static
