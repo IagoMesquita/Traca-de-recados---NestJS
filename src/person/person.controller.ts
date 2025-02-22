@@ -22,8 +22,6 @@ import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 import { TokenPayloadParam } from 'src/auth/params/token-payload.param';
 import { AuthTokenGuard } from 'src/auth/guards/auth-token.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
-import * as path from 'path';
-import * as fs from 'fs/promises';
 
 @Controller('persons')
 export class PersonController {
@@ -74,7 +72,7 @@ export class PersonController {
     @UploadedFile(
       new ParseFilePipeBuilder()
         .addFileTypeValidator({
-          fileType: 'jpeg',
+          fileType: /jpeg|jpg|png/g,
         })
         .addMaxSizeValidator({
           maxSize: 10 * (1024 * 1024),
@@ -85,25 +83,9 @@ export class PersonController {
     )
     file: Express.Multer.File,
   ) {
-    const fileExtension = path
-      .extname(file.originalname)
-      .toLowerCase()
-      .substring(1);
-
-    const fileName = `${tokenPayload.sub}.${fileExtension}`;
-    const fileFullPath = path.resolve(process.cwd(), 'pictures', fileName);
-
-    await fs.writeFile(fileFullPath, file.buffer);
-
-    console.log('fileExtension', fileExtension);
-    console.log('fileFullPath', fileFullPath);
-
-    return {
-      fieldname: file.fieldname,
-      originalname: file.originalname,
-      mimetype: file.mimetype,
-      buffer: {},
-      size: file.size,
-    };
+    return this.personService.uploadPicture(file, tokenPayload);
   }
 }
+
+// File upload
+// https://docs.nestjs.com/techniques/file-upload

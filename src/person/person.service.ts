@@ -1,10 +1,9 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
-  Inject,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
@@ -13,6 +12,8 @@ import { Person } from './entities/person.entity';
 import { Repository } from 'typeorm';
 import { HasingServiceProtocol } from 'src/auth/hasing/hashing.protocol.service';
 import { TokenPayloadDto } from 'src/auth/dto/token-payload.dto';
+import * as path from 'path';
+import * as fs from 'fs/promises';
 
 @Injectable()
 export class PersonService {
@@ -67,13 +68,18 @@ export class PersonService {
     return personDB;
   }
 
-  async update(id: number, updatePersonDto: UpdatePersonDto, tokenPayload: TokenPayloadDto) {
-
-    const passwordHash = await this.hashingService.toHash(updatePersonDto?.password);
+  async update(
+    id: number,
+    updatePersonDto: UpdatePersonDto,
+    tokenPayload: TokenPayloadDto,
+  ) {
+    const passwordHash = await this.hashingService.toHash(
+      updatePersonDto?.password,
+    );
 
     const partialUpdatePerson = {
       name: updatePersonDto?.name,
-      passwordHash
+      passwordHash,
     };
 
     const updatedPersonInstance = this.personRepository.create({
@@ -85,25 +91,53 @@ export class PersonService {
       throw new NotFoundException(`Usuario para ID ${id} nao encontrado`);
     }
 
-    if(tokenPayload.sub !== id) {
-      throw new ForbiddenException("Esse nao e seu usuario.")
+    if (tokenPayload.sub !== id) {
+      throw new ForbiddenException('Esse nao e seu usuario.');
     }
 
     return this.personRepository.save(updatedPersonInstance);
   }
 
-  async remove(id: number,  tokenPayload: TokenPayloadDto): Promise<{ menssage: string }> {
+  async remove(
+    id: number,
+    tokenPayload: TokenPayloadDto,
+  ): Promise<{ menssage: string }> {
     const personDB = await this.findOne(id);
 
-    if(tokenPayload.sub !== id) {
-      throw new ForbiddenException("Esse nao e seu usuario.")
+    if (tokenPayload.sub !== id) {
+      throw new ForbiddenException('Esse nao e seu usuario.');
     }
-
 
     await this.personRepository.remove(personDB);
 
     return {
       menssage: `Usuario deletado Id: ${id}`,
     };
+  }
+
+  async uploadPicture(
+    file: Express.Multer.File,
+    tokenPayload: TokenPayloadDto,
+  ) {
+    if (file.size < 1024) {
+      throw new BadRequestException('File too small');
+    }
+
+    const personDb = await this.findOne(tokenPayload.sub);
+
+    const fileExtension = path
+      .extname(file.originalname)
+      .toLowerCase()
+      .substring(1);
+
+    const fileName = `${tokenPayload.sub}.${fileExtension}`;
+    const fileFullPath = path.resolve(process.cwd(), 'pictures', fileName);
+
+    await fs.writeFile(fileFullPath, file.buffer);
+
+    personDb.picture = fileName;
+    this.personRepository.save(personDb);
+
+    return personDb;
   }
 }
