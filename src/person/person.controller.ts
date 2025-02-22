@@ -71,7 +71,18 @@ export class PersonController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadPicture(
     @TokenPayloadParam() tokenPayload: TokenPayloadDto,
-    @UploadedFile()
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({
+          fileType: 'jpeg',
+        })
+        .addMaxSizeValidator({
+          maxSize: 10 * (1024 * 1024),
+        })
+        .build({
+          errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+        }),
+    )
     file: Express.Multer.File,
   ) {
     const fileExtension = path
