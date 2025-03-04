@@ -5,7 +5,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { HasingServiceProtocol } from 'src/auth/hasing/hashing.protocol.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { CreatePersonDto } from './dto/create-person.dto';
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 
 describe('Person Service', () => {
   let personService: PersonService;
@@ -21,6 +25,8 @@ describe('Person Service', () => {
           useValue: {
             create: jest.fn(),
             save: jest.fn(),
+            findOne: jest.fn(),
+            find: jest.fn(),
           },
         },
         {
@@ -97,24 +103,106 @@ describe('Person Service', () => {
 
     it('should throw ConflictException when email already exists', async () => {
       jest.spyOn(personRepository, 'save').mockRejectedValue({
-        code: '23505'
+        code: '23505',
       });
 
       await expect(personService.create({} as any)).rejects.toThrow(
-        ConflictException
+        ConflictException,
       );
     });
 
     it('should throw Exception for a generic error', async () => {
-      jest.spyOn(personRepository, 'save').mockRejectedValue(
-        new Error('Erro generico')
-      );
+      jest
+        .spyOn(personRepository, 'save')
+        .mockRejectedValue(new Error('Erro generico'));
 
       await expect(personRepository.save).rejects.toThrow(
-        new  Error('Erro generico')
+        new Error('Erro generico'),
       );
     });
   });
+
+  describe('findOne', () => {
+    it('must find a user by id', async () => {
+      const userId = 1;
+      const personFound = {
+        id: 1,
+        name: 'Jaoa',
+        email: 'jaoa@gmail.com',
+        passwordHash: 'SENHAHASH',
+      };
+
+      jest
+        .spyOn(personRepository, 'findOne')
+        .mockResolvedValue(personFound as any);
+
+      const response = await personService.findOne(userId);
+
+      expect(personRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(personRepository.findOne).toHaveBeenCalledWith({
+        where: { id: userId },
+      });
+
+      expect(response).toEqual(personFound);
+    });
+
+    it('should throw a NotFoundException when user is not found', async () => {
+      await expect(personService.findOne(1)).rejects.toThrow(
+        new NotFoundException('Pessoa nao encontrada para ID: 1'),
+      );
+    });
+  });
+
+  describe('findAll', () => {
+    it('should return a list of persons ordered by id DESC', async () => {
+      const personsMock = [
+        {
+          id: 1,
+          name: 'Joao',
+          email: 'jaoa@gmail.com',
+          passwordHash: 'SENHAHASH',
+        },
+        {
+          id: 2,
+          name: 'Helena',
+          email: 'jaoa@gmail.com',
+          passwordHash: 'SENHAHASH',
+        },
+        {
+          id: 3,
+          name: 'Emilly',
+          email: 'jaoa@gmail.com',
+          passwordHash: 'SENHAHASH',
+        },
+      ];
+
+      jest
+        .spyOn(personRepository, 'find')
+        .mockResolvedValue(personsMock as any);
+
+      const response = await personService.findAll();
+
+      expect(personRepository.find).toHaveBeenCalledWith({
+        order: {
+          id: 'DESC',
+        },
+      });
+      expect(response).toEqual(personsMock);
+    });
+
+    it('checks when it returns an empty list', async () => {
+      const listEmpty = [];
+
+      jest.spyOn(personRepository, 'find').mockResolvedValue(listEmpty as any);
+
+      const response = await personService.findAll();
+
+      expect(response).toEqual(listEmpty as any);
+    });
+  });
+
+
+
 });
 
 describe('Conceito de AAA para testes', () => {
