@@ -10,6 +10,7 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
+import { UpdatePersonDto } from './dto/update-person.dto';
 
 describe('Person Service', () => {
   let personService: PersonService;
@@ -201,8 +202,52 @@ describe('Person Service', () => {
     });
   });
 
+  describe('update', () => {
+    it('checks if data is updated correctly for authenticated user', async () => {
+      const mockId = 1;
+      const updatePersonMock: UpdatePersonDto = {
+        name: 'Joao',
+        email: 'joao@gmail.com',
+        password: 'password',
+      };
+      const passwordHashMock: any = 'SENHAHASH';
+      const tokenPayloadMock = { sub: mockId };
+      const updatedPersonMock = {
+        id: mockId,
+        name: 'Joao',
+        passwordHash: passwordHashMock,
+      };
 
 
+      jest.spyOn(hashingService, 'toHash').mockResolvedValue(passwordHashMock);
+      jest.spyOn(personRepository, 'create').mockReturnValue(updatedPersonMock as any);
+      jest.spyOn(personRepository, 'save').mockResolvedValue(updatedPersonMock as any);
+
+      const response = await personService.update(
+        mockId,
+        updatePersonMock,
+        tokenPayloadMock as any,
+      );
+
+      expect(hashingService.toHash).toHaveBeenCalledTimes(1);
+      expect(hashingService.toHash).toHaveBeenCalledWith(
+        updatePersonMock.password,
+      );
+
+      expect(personRepository.create).toHaveBeenCalledTimes(1);
+      expect(personRepository.create).toHaveBeenCalledWith({
+        id: mockId,
+        name: 'Joao',
+        passwordHash: passwordHashMock,
+      });
+
+      expect(personRepository.save).toHaveBeenCalledTimes(1);
+      expect(personRepository.save).toHaveBeenCalledWith(updatedPersonMock);
+
+      expect(response).toEqual(updatedPersonMock)
+    
+    });
+  });
 });
 
 describe('Conceito de AAA para testes', () => {
