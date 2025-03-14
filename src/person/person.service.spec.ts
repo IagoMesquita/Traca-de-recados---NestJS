@@ -8,6 +8,7 @@ import { CreatePersonDto } from './dto/create-person.dto';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 import { UpdatePersonDto } from './dto/update-person.dto';
@@ -207,7 +208,7 @@ describe('Person Service', () => {
       const mockId = 1;
       const updatePersonMock: UpdatePersonDto = {
         name: 'Joao',
-        email: 'joao@gmail.com',
+        // email: 'joao@gmail.com',
         password: 'password',
       };
       const passwordHashMock: any = 'SENHAHASH';
@@ -218,10 +219,13 @@ describe('Person Service', () => {
         passwordHash: passwordHashMock,
       };
 
-
       jest.spyOn(hashingService, 'toHash').mockResolvedValue(passwordHashMock);
-      jest.spyOn(personRepository, 'create').mockReturnValue(updatedPersonMock as any);
-      jest.spyOn(personRepository, 'save').mockResolvedValue(updatedPersonMock as any);
+      jest
+        .spyOn(personRepository, 'create')
+        .mockReturnValue(updatedPersonMock as any);
+      jest
+        .spyOn(personRepository, 'save')
+        .mockResolvedValue(updatedPersonMock as any);
 
       const response = await personService.update(
         mockId,
@@ -244,8 +248,60 @@ describe('Person Service', () => {
       expect(personRepository.save).toHaveBeenCalledTimes(1);
       expect(personRepository.save).toHaveBeenCalledWith(updatedPersonMock);
 
-      expect(response).toEqual(updatedPersonMock)
-    
+      expect(response).toEqual(updatedPersonMock);
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      // Arrange
+      const mockId = 1;
+      const updatePersonMock: UpdatePersonDto = {
+        name: 'Joao',
+        password: 'password',
+      };
+      const tokenPayloadMock = { sub: mockId } as any;
+
+      // Simula que o create retorna null.
+      jest.spyOn(personRepository, 'create').mockReturnValue(null);
+
+      // Action e Assert
+      await expect(
+        personService.update(mockId, updatePersonMock, tokenPayloadMock),
+      ).rejects.toThrow(
+        new NotFoundException(`Usuario para ID ${mockId} nao encontrado`),
+      );
+
+      // Action e Assert Usando try/catch
+      try {
+        await personService.update(mockId, updatePersonMock, tokenPayloadMock);
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundException);
+        expect(error.message).toBe(`Usuario para ID ${mockId} nao encontrado`);
+      }
+    });
+
+    it('should throw ForbiddenException if unauthorized user', async () => {
+      // Arrange
+      const mockId = 1;
+      const updatePersonMock: UpdatePersonDto = {
+        name: 'Joao',
+        password: 'password',
+      };
+      const passwordHashMock: any = 'SENHAHASH';
+      const tokenPayloadMock = { sub: 2 } as any;
+      const updatedPersonMock = {
+        id: mockId,
+        name: 'Joao',
+        passwordHash: passwordHashMock,
+      } as any;
+
+      // Act
+      jest.spyOn(personRepository, 'create').mockReturnValue(updatedPersonMock);
+
+      // Assert
+      await expect(personService.update(mockId, updatePersonMock, tokenPayloadMock)).rejects.toThrow(
+        new ForbiddenException('Esse nao e seu usuario.')
+      );
+
     });
   });
 });
