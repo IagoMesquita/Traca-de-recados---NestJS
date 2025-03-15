@@ -12,6 +12,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UpdatePersonDto } from './dto/update-person.dto';
+import * as path from 'path';
+import * as fs from 'fs/promises';
+
+jest.mock('fs/promises'); // Mocka todo o modulo fs
 
 describe('Person Service', () => {
   let personService: PersonService;
@@ -29,6 +33,7 @@ describe('Person Service', () => {
             save: jest.fn(),
             findOne: jest.fn(),
             find: jest.fn(),
+            remove: jest.fn(),
           },
         },
         {
@@ -298,10 +303,132 @@ describe('Person Service', () => {
       jest.spyOn(personRepository, 'create').mockReturnValue(updatedPersonMock);
 
       // Assert
-      await expect(personService.update(mockId, updatePersonMock, tokenPayloadMock)).rejects.toThrow(
-        new ForbiddenException('Esse nao e seu usuario.')
-      );
+      await expect(
+        personService.update(mockId, updatePersonMock, tokenPayloadMock),
+      ).rejects.toThrow(new ForbiddenException('Esse nao e seu usuario.'));
+    });
 
+    describe('remove', () => {
+      it('must remove a person if authorized', async () => {
+        const mockId = 1;
+        const tokenPayloadMock = { sub: mockId } as any;
+        const passwordHashMock: any = 'SENHAHASH';
+        const updatedPersonMock = {
+          id: mockId,
+          name: 'Joao',
+          passwordHash: passwordHashMock,
+        } as any;
+
+        jest
+          .spyOn(personService, 'findOne')
+          .mockResolvedValue(updatedPersonMock);
+        jest
+          .spyOn(personRepository, 'remove')
+          .mockReturnValue(updatedPersonMock);
+
+        const result = await personService.remove(mockId, tokenPayloadMock);
+
+        expect(personService.findOne).toHaveBeenCalledTimes(1);
+        expect(personService.findOne).toHaveBeenCalledWith(mockId);
+
+        expect(personRepository.remove).toHaveBeenCalledTimes(1);
+        expect(personRepository.remove).toHaveBeenCalledWith(updatedPersonMock);
+
+        expect(result).toEqual({
+          menssage: `Usuario deletado Id: ${mockId}`,
+        });
+      });
+
+      it('should throw NotFoundException if the person is not found', async () => {
+        const mockId = 1;
+
+        jest
+          .spyOn(personService, 'findOne')
+          .mockRejectedValue(
+            new NotFoundException(`Pessoa nao encontrada para ID: ${mockId}`),
+          );
+      });
+
+      it('should throw ForbiddenException if not authorized', async () => {
+        const mockId = 1;
+        const tokenPayloadMock = { sub: 2 } as any;
+        const passwordHashMock: any = 'SENHAHASH';
+        const foundedPersonMock = {
+          id: mockId,
+          name: 'Joao',
+          passwordHash: passwordHashMock,
+        } as any;
+
+        jest
+          .spyOn(personService, 'findOne')
+          .mockResolvedValue(foundedPersonMock);
+
+        await expect(
+          personService.remove(mockId, tokenPayloadMock),
+        ).rejects.toThrow(new ForbiddenException('Esse nao e seu usuario.'));
+      });
+    });
+
+    // Upload Picture
+    describe('uploadPicture', () => {
+      it('must save the image correctly and update the person', async () => {
+        const mockId = 1;
+        const passwordHashMock: any = 'SENHAHASH';
+
+        const tokenPayloadMock = { sub: mockId } as any;
+        const fileMock = {
+          originalname: 'test.png',
+          size: 2000,
+          buffer: Buffer.from('file content'),
+        } as Express.Multer.File;
+
+        const foundPersonMock = {
+          id: mockId,
+          name: 'Joao',
+          passwordHash: passwordHashMock,
+        } as Person;
+
+        jest.spyOn(personService, 'findOne').mockResolvedValue(foundPersonMock);
+        jest.spyOn(personRepository, 'save').mockResolvedValue({
+          ...foundPersonMock,
+          picture: 'photo.png',
+        });
+        const filePath = path.resolve(process.cwd(), 'pictures', '1.png');
+
+        const result = await personService.uploadPicture(
+          fileMock,
+          tokenPayloadMock,
+        );
+
+        expect(fs.writeFile).toHaveBeenCalledTimes(1);
+        expect(fs.writeFile).toHaveBeenCalledWith(filePath, fileMock.buffer);
+
+        expect(personService.findOne).toHaveBeenCalledTimes(1);
+        expect(personService.findOne).toHaveBeenCalledWith(
+          tokenPayloadMock.sub,
+        );
+
+        expect(personRepository.save).toHaveBeenCalledTimes(1);
+        expect(personRepository.save).toHaveBeenCalledWith({
+          ...foundPersonMock,
+          picture: '1.png',
+        });
+
+        expect(result).toEqual({ ...foundPersonMock, picture: '1.png' });
+      });
+
+      it('should throw BadRequestException if file is too small', async () => {
+        const mockFile = { size: 1023 } as Express.Multer.File;
+        const tokenPayloadMock = { sub: 1 } as any;
+
+        await expect(
+          personService.uploadPicture(mockFile, tokenPayloadMock),
+        ).rejects.toThrow(new BadRequestException('File too small'));
+      });
+
+      it('should throw NotFoundException if the person is not found', async () => {
+        
+      });
     });
   });
 });
