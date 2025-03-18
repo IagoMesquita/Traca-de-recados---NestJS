@@ -11,6 +11,6 @@ async function bootstrap() {
     forbidNonWhitelisted: true, // Retorna erro para propriedades não permitidas
     transform: false, // Transforma a entrada nos tipos especificados
   }));
-  await app.listen(3000);
+  await app.listen(process.env.APP_PORT);
 }
 bootstrap();
