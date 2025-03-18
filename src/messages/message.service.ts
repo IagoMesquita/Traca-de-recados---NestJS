@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Message } from './entities/message';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,6 +11,7 @@ import { UpdateMessageDto } from './dto/update-message.dto';
 import { PersonService } from 'src/person/person.service';
 import { PaginationDTO } from 'src/common/dto/pagination.dto';
 import { TokenPayloadDto } from 'src/auth/dto/token-payload.dto';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class MessageService {
@@ -14,6 +19,7 @@ export class MessageService {
     @InjectRepository(Message)
     private messageRepository: Repository<Message>,
     private readonly personService: PersonService,
+    private readonly emailService: EmailService,
   ) {}
 
   async addMessage(
@@ -37,6 +43,12 @@ export class MessageService {
     const message = this.messageRepository.create(newMessage);
 
     await this.messageRepository.save(message);
+
+    await this.emailService.send(
+      userToDb.email,
+      `Voce recebeu um recado de "${userFromDb.name}" <${userFromDb.email}>`,
+      text,
+    );
 
     return {
       ...message,
@@ -115,10 +127,10 @@ export class MessageService {
     //   text: updateMessage?.text,
     // }
 
-    if(messageDb.from.id !== tokenPayload.sub ) {
-      throw new ForbiddenException("Nao pode alterar uma messagem que nao e");
+    if (messageDb.from.id !== tokenPayload.sub) {
+      throw new ForbiddenException('Nao pode alterar uma messagem que nao e');
     }
-    
+
     const isRead = updateMessage.isRead
       ? updateMessage.isRead
       : messageDb.isRead;
@@ -156,12 +168,12 @@ export class MessageService {
   ): Promise<{ message: string }> {
     const messageDB = await this.findOne(id);
 
-    if(messageDB.from.id !== tokenPayload.sub) {
-      throw new ForbiddenException("Esse recado nao e seu para exclui-lo");
+    if (messageDB.from.id !== tokenPayload.sub) {
+      throw new ForbiddenException('Esse recado nao e seu para exclui-lo');
     }
 
     await this.messageRepository.delete(id);
-    
+
     return { message: `Recado de ID ${id}, Deletado` };
   }
 }
